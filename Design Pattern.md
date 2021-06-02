@@ -455,7 +455,118 @@ public class BuilderDemo{
 }
 ```
 
-
-
 ## Proxy
+
+>代理模式就是在不改变原始类的行为，为其添加附加功能
+
+### 原始类是自己可以掌控的
+
+利用`基于接口而不是类实现`的原则，可以把原始类变成一个接口，然后原始类和代理类都去实现。并且在代理类完成想要增加的附加功能。这样就将业务和想要增加的附加功能分开了。
+
+```java
+public interface IUserController{
+    String login(String username,String password);
+    String register(String telephone,String password);
+}
+
+public class UserController implements IUserController{
+    @Override
+    public String login(String username,String password){
+        //业务逻辑
+    }
+    
+    @Override
+    public String register(String telephone,String password){
+        //业务逻辑
+    }
+}
+
+public class UserControllerProxy implements IUserController{
+    private MetricsController metricsController; //要增加的附加功能
+    private UserController userController;
+    
+    public UserControllerProxy(UserController userController){
+        this.userController=userController;
+        metricsController=new MetricsController();
+    }
+    
+    @Override
+    public String login(String username,String password){
+        //业务逻辑
+        userController.login(username,password);
+        //增加的附加功能
+        metricsController.record(requestInfo)
+    }
+    ...
+}
+```
+
+### 原始类自己无法控制
+
+原始类来自第三方或者其它部分的库。这个时候就无法编写接口，所以可以通过`继承`来实现
+
+```java
+public UserControllerProxy extends UserController{
+    private MetricsContrller metricsController;
+    
+    public UserControllerProxy(){
+        this.metricsController=new MetricsController();
+    }
+    
+    public String login(String username,String password){
+        //业务逻辑
+        super.login(username,password);
+        //附加功能
+        metricsController.record(requestInfo);
+    }
+}
+```
+
+---
+
+以上的方法都很不好，如果要添加很多的附加功能，要写多少个类？
+
+所以我们可以通过动态代理来实现
+
+### 动态代理
+
+> 动态代理利用Java提供的反射的功能，可以在程序运行的过程中生成类。
+
+```java
+public class MetricsCollectorProxy{
+    private MetricsController metricsCotroller;
+    
+    public MetricsCollectorProxy(){
+        this.metricsController=new MetricsController();
+    }
+    
+    public Object createproxy(Object proxiedObject){
+        Class<?>[] interfaces=proxiedObject.getClass().getInterfaces();
+        DynamicProxyHandler handler=new DynamicProxyHandler(proxiedObject);
+        return Proxy.newProxyInstance(proxiedObject.getClass().getClassLoader(),interfaces,handler);
+    }
+    
+    private class DynamicProxyHandler implements InvocationHandler{
+        private Object proxiedObject;
+        
+        public DynamicProxyHandler(Object proxiedObject){
+            this.proxiedObject=proxiedObject;
+        }
+        @Override
+        public Object invoke(Object proxy,Method method,Object[] args) throw Throwable{
+            //业务逻辑
+            Object result=method.invoke(proxiedObject,args);
+            //附加的功能
+            metricsController.record(requestInfo);
+            return result;
+        }
+    }
+}
+
+
+MetricsCollectorProxy proxy=new MetricsCollectorProxy();
+IUserController userController=(IUserController)proxy.createProxy(new UserController());
+```
+
+#### 实战Spring AOP
 
