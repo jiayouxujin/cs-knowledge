@@ -1,5 +1,129 @@
 # Design Pattern
 
+## Factory
+
+工厂设计模式总共有三种，分别是简单工厂、工厂方法和抽象工厂。其中抽象工厂用的很少。
+
+什么时候用简单工厂、工厂方法？
+
+>如果每个一个实例需要很复杂的操作，那么使用工厂方法会比较好
+>
+>如果一个实例只需要通过new,那么使用简单工厂会比较好
+>
+>重要：如果只有简单的if-else那么不要使用工厂，类太多反而不容易维护
+
+### Simple Factory
+
+在Java中我们使用new关键字来初始化一个实例，同时为了提高代码的灵活性，我们可以使用接口【我在说什么】。
+
+举个例子
+
+```java
+interface A{
+    
+}
+
+class B implements A{
+    
+}
+
+class C implements A{
+    
+}
+那么可能在某一个方法里会出现这样的代码
+init(String type){
+    A a=null;
+    if(type.equals("B")){
+        A=new B();
+    }else if(type.equals("C")){
+        A=new C();
+    }
+    //业务逻辑代码
+}
+```
+
+以上就是我想说的，可能在某份代码里会出现这样的情况。那么我们能做的一个优化就是将那段if代码抽成一个function
+
+```java
+class SimpleFactory{
+    public SimpleFactory(){}
+    
+    public A getA(String type){
+        A a=null;
+    if(type.equals("B")){
+        A=new B();
+    }else if(type.equals("C")){
+        A=new C();
+    }
+       return A;
+    }
+}
+
+class YouBussic{
+    private SimpleFactory factory;
+    public YouBussic(SimpleFactory factory){
+        this.factory=factory;
+    }
+    
+    public void init(String type){
+        A=factory.getA(type);
+        //业务逻辑代码
+    }
+}
+```
+
+当然我们也可以通过static方法，这样就不需要new SimpleFactory后再getA()
+
+### Factory Method
+
+>定义一个实现对象的接口，但是让每个子类决定具体实现的是哪一个接口
+
+简单说，就是去掉上面的if?实际上并不能去掉，或者说让代码更加可读
+
+```java
+interface A{
+    
+}
+
+interface AFactory{
+    A create();
+}
+
+class B implements A{
+    
+}
+
+class BFactory implements AFactory{
+    A create(){
+        return B();
+    }
+}
+
+class C implements A{
+    
+}
+
+class CFactory implements AFactory{
+    A create(){
+        return C();
+    }
+}
+
+class ABCFactory{
+    private static Map<String,AFactory> map=new HashMap<>();
+    static{
+        map.put("B",new BFactory());
+        map.put("C",new CFactory());
+    }
+    
+    public static AFactory create(String type){
+        return map.get(type);
+    }
+}
+```
+
+
+
 ## Singleton
 
 ### 重点
@@ -292,4 +416,8 @@ public class Singleton{
 #### 多例模式
 
 如何实现多例模式，指的是一个类只能初始化有限个数的实例。可以通过map来存储实例，并且控制其个数。
+
+##
+
+## Proxy
 
