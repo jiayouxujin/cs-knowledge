@@ -417,7 +417,45 @@ public class Singleton{
 
 如何实现多例模式，指的是一个类只能初始化有限个数的实例。可以通过map来存储实例，并且控制其个数。
 
-##
+## Builder
+
+>建造者模式用来解决复杂的构造情况，或者说减少构造的参数
+
+编写代码要点：
+
+1. **原构造函数需要为private**，因为这样就保证了如果要实例化这个类，只能通过builder来实现
+
+```java
+public class BuilderDemo{
+    //...
+    private String p1;
+    
+    //构造函数需要为private
+    private BuilderDemo(Builder builder){
+        this.p1=builder.p1;
+    }
+    
+   
+    public static class Builder{
+        private String p1;
+        
+        public BuilderDemo build(){
+            //检验
+            if(p1==null){
+                //或者其它逻辑
+            }
+            return BuilderDemo(this);
+        }
+        
+        public Builder setP1(String p){
+            this.p1=p;
+            return this;
+        }
+    }
+}
+```
+
+
 
 ## Proxy
 
