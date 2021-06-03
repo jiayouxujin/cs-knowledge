@@ -571,3 +571,213 @@ IUserController userController=(IUserController)proxy.createProxy(new UserContro
 #### 实战Spring AOP
 
 [待补充]
+
+## Observer
+
+>观察者模式，在对象之间定义了一个一对多关系。当这个一的状态发生改变时，它所对应的多都会自动发生改变
+
+观察者模式属于使用较为频繁的一种设计模式，主要可以看成`发布者-订阅者模式`
+
+同时我们在实现的时候还可以选择是否阻塞，是否异步等。
+
+对了，消息队列也是这种模式，你想想看？
+
+### 简单例子
+
+在这个例子里，我们将实现一个气象观察站，首先气象观察站会得到具体的温度、湿度等。然后会notify它的所有订阅者。快来一起看看吧
+
+```java
+public interface Observer{
+    void update(float temp,float humi,float pressure);
+}
+
+public interface Subject{
+    void registerObserver(Observer o);
+    void removeObserver(Observer o);
+    void notify();
+}
+
+public interface Display{
+    void display();
+}
+```
+
+```java
+public class WeatherData implements Subject{
+    private List<Observer> observers;
+    private float temp;
+    private float humi;
+    private float pressure;
+    
+    public WeatherData(){
+        observers=new ArrayList<>();
+    }
+    
+    @Override
+    public void registerObserver(Observer o){
+        observers.add(o);
+    }
+    
+    @Override
+    public void removeObserver(Observer o){
+        int i=observers.indexOf(o);
+        if(i>=0){
+            observers.remove(i);
+        }
+    }
+    
+    @Override
+    public void notify(){
+        for(Observer o:observers){
+            o.update(temp,humi,pressure);
+        }
+    }
+    
+    public void mesureDataDisplay(){
+        notify();
+    }
+    
+    public setMesureData(float temp,float humi,float pressure){
+        this.temp=temp;
+        this.humi=humi;
+        this.pressure=pressure;
+        mesureDataDisplay();
+    }
+}
+```
+
+```java
+public class CurrentDataDispaly implements Observer,Display{
+    private Subject subjet;
+    private float temp;
+    private float humi;
+    
+    public CurrentDataDisplay(Subject subject){
+        this.subject=subject;
+        this.subject.registerObserver(this);
+    }
+    
+    @Override
+    public void update(float temp,float humi,float pressure){
+        this.temp=temp;
+        this.humi=humi;
+        display();
+    }
+    
+    @Override
+    public void display(){
+        //显示逻辑
+    }
+}
+```
+
+### 使用built-in的Observer
+
+现在我们使用内置的Observer来改造我们上面的例子
+
+【但是这种写法其实不好，因为Java的类不支持多继承，所以复杂业务是无法实现的】
+
+```java
+public class WeatherData extends Observable{
+    private float temp;
+    private float humi;
+    private float pressure;
+    
+    public void measureDataDisplay(){
+        setChange();//这个方法表示 可以通知了，在前端通常有个search技巧，即不会每次都去请求，等输入差不多的时候会请求
+        notifyObservers();
+    }
+    
+    public void setMeasureData(float temp,float humi,float pressure){
+        this.temp=temp;
+        this.humi=humi;
+        this.pressure=pressure;
+        measureDataDisplay();
+    }
+    //getter
+}
+```
+
+```java
+public class CurrentDataDispaly implements Observer,Display{
+    private float temp;
+    private float humi;
+    Observable observable;
+    
+    public CurrentDataDisplay(Observable o){
+        this.observable=o;
+        this.observable.addObserver(this);
+    }
+    
+    @Override
+    public void dispaly(){
+        //业务逻辑
+    }
+    
+    @Override
+    public void update(Observable o,Object arg){
+        if(o instanceof WeatherData){
+            WeatherData weatherData=(WeatherData)o;
+            this.temp=weatherData.getTemp();
+            this.humi=weatherData.getHumi();
+            display();
+        }
+    }
+}
+```
+
+### In Action
+
+这此我们要完成的例子是，在用户注册完，我们给其发送优惠卷，Welcom信息。
+
+如果是以前的话，我会把这段代码耦合在register函数里。但是`行为型模式就是将不同行为的代码进行解耦`，让我们一起来看看吧。
+
+```java
+public interface RegObserver{
+    void handleRegSuccess(long userId);
+}
+
+public class RegPromotionObserver implements RegObserver{
+    @Override
+    public void handleRegSuccess(long userId){
+        //业务逻辑
+        
+    }
+}
+
+public class RegNotificationObserver implements RegObserver{
+    @Override
+    public void handleRegSuccess(long userId){
+        //业务逻辑
+    }
+}
+```
+
+```java
+public class UserController{
+    List<RegObserver> observers;
+    
+    public UserController(){
+        observers=new ArrayList<>();
+    }
+    
+    public void setRegObserver(RegObserver observer){
+        observers.add(observer);
+	}
+    
+    public void register(String telephone,String password){
+        //业务逻辑
+        long userId=UserService.register(telephone,password);
+        for(RegObserver ob:observers){
+            ob.handleRegSuccess(userId);
+        }
+    }
+}
+```
+
+### Guava In Action
+
+Guava提供了EventBus来实现观察者模式，其中我们可以通过其的封装实现异步观察者。
+
+>不过这里的Observer只能由一个参数，同时注意如果是long的话，那么在执行eventBus.post(event),event会被自动装箱成Long，如果你的@Subscribe里的参数是long会执行不到
+
