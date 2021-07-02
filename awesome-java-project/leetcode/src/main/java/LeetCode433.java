@@ -2,9 +2,9 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Set;
 
-public class LeetCode443 {
+public class LeetCode433 {
     public static void main(String[] args) {
-        LeetCode443 leetCode443 = new LeetCode443();
+        LeetCode433 leetCode443 = new LeetCode433();
         String[] bank = new String[]{"AAAAAAAA", "AAAAAAAC", "AAAAAACC", "AAAAACCC", "AAAACCCC", "AACACCCC", "ACCACCCC", "ACCCCCCC", "CCCCCCCA"};
         System.out.println(leetCode443.minMutation("AAAAAAAA", "CCCCCCCC", bank));
     }
