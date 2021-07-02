@@ -8,6 +8,7 @@
         <outputRelativeToContentRoot value="true" />
         <module name="design-pattern" />
         <module name="java-thread" />
+        <module name="leetcode" />
       </profile>
     </annotationProcessing>
   </component>
